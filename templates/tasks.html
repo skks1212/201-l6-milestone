@@ -37,7 +37,7 @@
                     <div task-block class="bg-slate-100 rounded-lg p-3 flex justify-between items-center mb-5 task-complete-{{task.completed}}">
                         <div class="flex">
                             <div class="ml-2">
-                                <a href="/detail-task/{{task.id}}" class="font-bold {% if task.completed == True %} line-through text-red-400 {% endif %}">
+                                <a class="font-bold {% if task.completed == True %} line-through text-red-400 {% endif %}">
                                     {{task.title}}  <span class="text-gray-400">&middot; {{task.priority}}</span>
                                 </a>
                                 <br>

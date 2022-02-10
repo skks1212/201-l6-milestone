@@ -105,15 +105,10 @@ class GenericTaskUpdateView(AuthorizedTaskManager, UpdateView):
     success_url = "/tasks"
 
     def form_valid(self, form):
+        if 'priority' in form.changed_data:
+            form_priority = form.cleaned_data['priority']
+            checkPriority(form_priority, self.request.user)
         self.object = form.save()
-        self.object.user = None
-        self.object.save()
-
-        model_ = Task.objects.filter(priority=self.object.priority,deleted=False,completed=False,user=self.request.user)
-        if model_.exists():
-            appendPriority(self.object.priority, self.request.user)
-        self.object.user = self.request.user
-        self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
 class GenericTaskCreateView(CreateView):
@@ -122,21 +117,41 @@ class GenericTaskCreateView(CreateView):
     success_url = "/tasks"
 
     def form_valid(self, form):
+
+        #check and append all priorities
+        form_priority = form.cleaned_data['priority']
+
+        checkPriority(form_priority, self.request.user)
+
         self.object = form.save()
-        model_ = Task.objects.filter(priority=self.object.priority,deleted=False,completed=False,user=self.request.user)
-        if model_.exists() and self.object.completed == False:
-            appendPriority(self.object.priority, self.request.user)
         self.object.user = self.request.user
         self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
-def appendPriority(prio, user_a):
-    print(f"Checking for priority {prio}")
-    model = Task.objects.filter(priority=prio,deleted=False,completed=False,user=user_a)
-    model_count = model.count()
-    if model_count > 0:
-        print('Priority Exists')
-        appendPriority(prio+1, user_a)
-        model.update(priority = prio+1)
-    else :
-        print('Priority does not exist, exiting recursion')
+def checkPriority(priority_num, user_a):
+    has_issue = True
+    p_i = priority_num
+    to_change = []
+
+    while(has_issue):
+        #check if there is a task with priority
+        print(f"Checking for priority {p_i}")
+        try:
+            model = Task.objects.get(priority=p_i,deleted=False,completed=False,user=user_a)
+            to_change.append(model)
+        except Task.DoesNotExist:
+            has_issue = False
+            print(f"There is no task with this priority")
+
+        p_i += 1
+
+    for i in range(len(to_change)):
+        obj = to_change[i]
+        print(f"Old Priority = {obj.priority}")
+        obj.priority = int(obj.priority) + 1
+        print(f"New Priority = {obj.priority}")
+
+    if(len(to_change) > 0):
+        Task.objects.bulk_update(to_change, ['priority'])
+
+    #OH MY GOD ITS WORKING SJD ASIJDIA JDIIJAS DIJA SODJO ASJOI AJIO DJOA I CRY 😭 Cant wait to be rejected again.
